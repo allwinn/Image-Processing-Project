@@ -12,7 +12,9 @@ from tensorflow.keras import layers
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import os
 import matplotlib.pyplot as plt
+import pandas as pd
 
+#from keras.models import load_model
 base_dir='1_classification'
 
 #Folder with ids and nonid images
@@ -80,14 +82,17 @@ history = model.fit(
             )
 
 
-model.predict(train_dir)
-model.save_weights("modelv1.h5")
-[layer.output for layer in model.layers]
+model.save_weights("modelv2.h5")
 
 
-import pandas as pd
+
+
 #Displaying output
-test_filenames = os.listdir(test_ids_yes)
+test_filenames=[]
+path = [test_ids_yes, test_ids_no]
+for i in path:
+    test_filenames.append(os.listdir(i))
+    
 test_df = pd.DataFrame({
     'filename': test_filenames[0]+test_filenames[1]
 })
@@ -96,39 +101,35 @@ nb_samples = test_df.shape[0]
 test_datagen = ImageDataGenerator(rescale = 1.0/255)
 test_generator = train_datagen.flow_from_directory(test_dir,
                                                     batch_size=20,
-                                                    class_mode='binary',
-                                                    target_size=(150, 150)
-                                                
+                                                    class_mode=None,
+                                                    target_size=(150, 150),
+                                                    shuffle=False
                                                     )
 
+
+model.load_weights('modelv1.h5')
+#new_model=tf.keras.models.load_model('modelv1.h5')
 predict = model.predict(test_generator, steps=np.ceil(nb_samples/20))
 
-test_df['id_present'] = np.argmax(predict, axis=-1)
+test_df['id_present'] = [0 if x<=0.5 else 1 for x in predict]
+test_df.to_csv("labels_test.csv")
 
 
+#Visualization
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+loss = history.history['loss']
+val_loss = history.history['val_loss']
 
-test_filenames=[]
-path = [test_ids_yes, test_ids_no]
-for i in path:
-    test_filenames.append(os.listdir(i))
-    
-    for filename in os.listdir(i):
-        with open(os.path.join(i, filename), 'r') as filedata:
-            string = "".join(filedata.read().split())
+epochs = range(len(acc)) 
 
-os.listdir(test_ids_yes)
+# plot accuracy with matplotlib
+plt.plot(epochs, acc)
+plt.plot(epochs, val_acc)
+plt.title('Accuracy in training and validation')
+plt.figure()
 
-
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 12))
-ax1.plot(history.history['loss'], color='b', label="Training loss")
-ax1.plot(history.history['val_loss'], color='r', label="validation loss")
-ax1.set_xticks(np.arange(1, epochs, 1))
-ax1.set_yticks(np.arange(0, 1, 0.1))
-
-ax2.plot(history.history['acc'], color='b', label="Training accuracy")
-ax2.plot(history.history['val_acc'], color='r',label="Validation accuracy")
-ax2.set_xticks(np.arange(1, epochs, 1))
-
-legend = plt.legend(loc='best', shadow=True)
-plt.tight_layout()
-plt.show()
+# plot loss with matplotlib
+plt.plot(epochs, loss)
+plt.plot(epochs, val_loss)
+plt.title('Loss in training and validation')
