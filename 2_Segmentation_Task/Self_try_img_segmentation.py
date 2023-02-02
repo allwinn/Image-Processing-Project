@@ -28,13 +28,17 @@ seed=42
 np.random.seed=seed
 train_ids=next(os.walk(train_path_ids))[2]
 train_gt=next(os.walk(train_path_gt))[2]
-test_ids=next(os.walk(test_path))[2]
+test_ids=next(os.walk(test_path_ids))[2]
+test_gt=next(os.walk(test_path_gt))[2]
 
 X_train=np.zeros((len(train_ids),img_h,img_w,img_c),dtype=np.uint8)
 Y_train=np.zeros((len(train_ids),img_h,img_w,1),dtype=bool)
+X_test=np.zeros((len(test_ids),img_h,img_w,img_c),dtype=np.uint8)
+Y_test=np.zeros((len(test_ids),img_h,img_w,img_c),dtype=np.uint8)
 print("resizing training images")
 for n,id_ in tqdm(enumerate(train_ids),total=len(train_ids)):
     path=train_path_ids+id_
+    print(path)
     img=imread(path)[:,:,:img_c]
     img=resize(img,(img_h,img_w),mode='constant',preserve_range=True)
     X_train[n]=img
@@ -54,6 +58,34 @@ for n,id_ in tqdm(enumerate(train_gt),total=len(train_gt)):
     mask_=np.expand_dims(resize(mask_,(img_h,img_w),mode='constant',preserve_range=True),axis=-1)
     Y_train[n]=mask_
     #print('added image',n,'with path',path)
+    
+    
+    
+#resizing test images
+
+"""
+path=test_path_ids+id_
+mask_=imread('Test/GroundTruth/fake_id_101_back_seg.png',as_gray=True)
+mask=np.expand_dims(resize(mask_,(img_h,img_w),mode='constant',preserve_range=True),axis=-1)
+mask=resize(mask_,(img_h,img_w),mode='constant',preserve_range=True)
+Y_train[0]=mask
+"""
+print("resizing Test images")
+for n,id_ in tqdm(enumerate(test_ids),total=len(test_ids)):
+    path=test_path_ids+id_
+    img=imread(path)[:,:,:img_c]
+    img=resize(img,(img_h,img_w),mode='constant',preserve_range=True)
+    X_test[n]=img
+    
+ 
+for n,id_ in tqdm(enumerate(test_gt),total=len(test_gt)):
+    path=test_path_gt+id_
+    #mask=np.zeros((img_h,img_w,1),dtype=bool)
+    mask_=imread(path,as_gray=True)
+    mask_=np.expand_dims(resize(mask_,(img_h,img_w),mode='constant',preserve_range=True),axis=-1)
+    Y_test[n]=mask_
+    #print('added image',n,'with path',path)   
+    
     
 from tensorflow.keras import layers
 
@@ -131,7 +163,7 @@ img_size = (128, 128)
 model = multi_unet_model(num_classes,img_size)
 model.summary()
 
-checkpointer=tf.keras.callbacks.ModelCheckpoint('model_segmentation_scratch.h5',verbose=1,save_best_only=True)
+checkpointer=tf.keras.callbacks.ModelCheckpoint('model_segmentation_scratch.h5',verbose=2,save_best_only=True)
 
 callbacks=[
     tf.keras.callbacks.EarlyStopping(patience=10,monitor='val_loss'),
@@ -140,25 +172,36 @@ callbacks=[
 results=model.fit(X_train,Y_train,validation_split=0.1,batch_size=16,epochs=25,callbacks=callbacks)
 
 
+#Verify accuracy and loss
+#Visualization
+acc = results.history['accuracy']
+val_acc = results.history['val_accuracy']
+loss = results.history['loss']
+val_loss = results.history['val_loss']
+
+epochs = range(len(acc)) 
+
+# plot accuracy with matplotlib
+plt.plot(epochs, acc)
+plt.plot(epochs, val_acc)
+plt.title('Accuracy in training and validation')
+plt.figure()
+
+# plot loss with matplotlib
+plt.plot(epochs, loss)
+plt.plot(epochs, val_loss)
+plt.title('Loss in training and validation')
+
+
 #Check results
-
-#resizing test images
-X_test=np.zeros((len(test_ids),img_h,img_w,img_c),dtype=np.uint8)
-for n,id_ in tqdm(enumerate(test_ids),total=len(test_ids)):
-    path=test_path_ids+id_
-    img=imread(path)[:,:,:img_c]
-    img=resize(img,(img_h,img_w),mode='constant',preserve_range=True)
-    X_test[n]=img
-    
-
 
 preds_train=model.predict(X_train[:int(X_train.shape[0]*0.9)],verbose=1)
 preds_val=model.predict(X_train[int(X_train.shape[0]*0.9):],verbose=1)
-preds_test=model.predict(X_test,verbose=1)
+preds_test=model.predict(X_test,verbose=2)
 
-preds_train_t=(preds_train>0.5).astype(np.uint8)
+preds_train_t=(preds_train>0.1).astype(np.uint8)
 preds_val_t=(preds_val>0.5).astype(np.uint8)
-preds_test_t=(preds_test>0.5).astype(np.uint8)
+preds_test_t=(preds_test>0.2).astype(np.uint8)
 
 ix=random.randint(0,len(preds_train_t))
 fig = plt.figure(figsize=(10, 7))
@@ -167,19 +210,46 @@ columns = 2
 fig.add_subplot(rows, columns, 1)
 plt.imshow(X_train[ix])
 plt.axis('off')
-plt.title("First")
+plt.title("Actual Input")
 
 fig.add_subplot(rows, columns, 2)
 plt.imshow(np.squeeze(Y_train[ix]))
 plt.axis('off')
-plt.title("Second")
+plt.title("Actual Mask")
 
-plt.imshow(Image3)
+fig.add_subplot(rows, columns, 3)
 plt.imshow(np.squeeze(preds_train[ix]))
 plt.axis('off')
-plt.title("Third")
+plt.title("Predicted Mask")
 
-plt.imshow(Image4)
-plt.imshow(np.squeeze(preds_train_t[ix]))
+fig.add_subplot(rows, columns, 4)
+plt.imshow(np.squeeze(preds_train_t[ix]),cmap="gray")
 plt.axis('off')
-plt.title("Fourth")
+plt.title("Predicted Mask Black and White")
+
+#test images
+ix=random.randint(0,len(preds_test_t))
+fig = plt.figure(figsize=(10, 7))
+rows = 2
+columns = 2
+fig.add_subplot(rows, columns, 1)
+plt.imshow(X_test[ix])
+plt.axis('off')
+plt.title("Actual Input")
+
+fig.add_subplot(rows, columns, 2)
+plt.imshow(np.squeeze(Y_test[ix]))
+plt.axis('off')
+plt.title("Actual Mask")
+
+fig.add_subplot(rows, columns, 3)
+plt.imshow(np.squeeze(preds_test[ix]))
+plt.axis('off')
+plt.title("Predicted Mask")
+
+fig.add_subplot(rows, columns, 4)
+plt.imshow(np.squeeze(preds_test_t[ix]),cmap="gray")
+plt.axis('off')
+plt.title("Predicted Mask Black and White")
+
+
