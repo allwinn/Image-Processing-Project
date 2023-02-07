@@ -2,7 +2,6 @@
   "Paths": {
     "data_path": {
       "root": "data",
-      "prediction_dir": "predictions",
       "classification": {
         "train": "1_classification/Train",
         "test": "1_classification/Test",
@@ -13,6 +12,10 @@
         "train": "2_segmentation/Train",
         "test": "2_segmentation/Test"
       }
+    },
+    "prediction_path": {
+      "root": "predictions",
+      "classification_fn": "test_pred.csv"
     }
   },
   "Constants": {
@@ -27,7 +30,7 @@
     },
     "segmentation": {
       "batch_size": 16,
-      "epoch": 25,
+      "epoch": 12,
       "img_size": {
         "width": 128,
         "height": 128

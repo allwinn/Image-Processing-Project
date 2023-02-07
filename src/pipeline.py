@@ -27,9 +27,9 @@ def seg(train=False,evaluate=False):
     if train:
         segmentation_trainer(e,bs)
     if evaluate:
-        evaluate_segmentation("models/segmentation_e25_bs16.h5",bs,img_size,predict=False)
+        evaluate_segmentation("models/segmentation_e12_bs16.h5",bs,img_size,predict=True)
 
 
 if __name__ == "__main__":
     # id_present(train=True,evaluate=True)
-    seg(evaluate=True)
+    seg(train=False,evaluate=True)

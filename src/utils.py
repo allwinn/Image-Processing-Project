@@ -5,6 +5,7 @@ import json
 from glob import glob
 import random
 import os
+import math
 
 
 def get_config():
@@ -16,10 +17,23 @@ def get_config():
 CONFIG = get_config()
 CONSTANTS = CONFIG["Constants"]
 
+
+def check_and_send_paths(inp_path,target_path):
+
+    assert len(inp_path) == len(target_path), "Segmentation: inp & target path size is not same"
+    for i_path,t_path in zip(inp_path,target_path):
+        i_path = i_path.split('/')[-1]
+        t_path = f"{t_path.split('/')[-1].split('.')[0][:-4]}.png"
+        
+        assert i_path == t_path, "Segmentation: inp & target path are not same"
+    return inp_path,target_path
+
+
 def get_segmentation_glob(dir,shuffle=True):
 
-    input_paths = glob(os.path.join(dir,"Ids","*.png"))
-    target_paths = glob(os.path.join(dir,"GroundTruth","*.png"))
+    input_paths = sorted(glob(os.path.join(dir,"Ids","*.png")))
+    target_paths = sorted(glob(os.path.join(dir,"GroundTruth","*.png")))
+
     if shuffle:
         shuffled_inp_path = []
         shuffled_target_path = []
@@ -32,9 +46,8 @@ def get_segmentation_glob(dir,shuffle=True):
             shuffled_inp_path.append(input_paths[i])
             shuffled_target_path.append(target_paths[i])
 
-        assert len(shuffled_inp_path) == len(input_paths)
-        return shuffled_inp_path, shuffled_target_path
-    return input_paths,target_paths
+        return check_and_send_paths(shuffled_inp_path, shuffled_target_path)
+    return check_and_send_paths(input_paths,target_paths)
 
 
 
@@ -54,7 +67,7 @@ class SegmentationDataloader(Sequence):
 
     def __len__(self):
         "return number of batches"
-        return len(self.target_paths) // self.batch_size
+        return math.ceil(len(self.target_paths) / self.batch_size)
 
 
     def __getitem__(self, idx):
