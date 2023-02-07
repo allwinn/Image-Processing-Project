@@ -1,0 +1,38 @@
+{
+  "Paths": {
+    "data_path": {
+      "root": "data",
+      "prediction_dir": "predictions",
+      "classification": {
+        "train": "1_classification/Train",
+        "test": "1_classification/Test",
+        "labels_train": "1_classification/Train/labels_train.csv",
+        "labels_test": "1_classification/Test/labels_test.csv"
+      },
+      "segmentation": {
+        "train": "2_segmentation/Train",
+        "test": "2_segmentation/Test"
+      }
+    }
+  },
+  "Constants": {
+    "classification": {
+      "batch_size": 64,
+      "epoch": 10,
+      "num_block": 4,
+      "img_size": {
+        "width": 128,
+        "height": 128
+      }
+    },
+    "segmentation": {
+      "batch_size": 16,
+      "epoch": 25,
+      "img_size": {
+        "width": 128,
+        "height": 128
+      }
+    },
+    "seed": 123
+  }
+}

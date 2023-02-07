@@ -1,0 +1,7 @@
+data 
+models #dont upload models on git
+*.h5
+logs
+src/__pycache__
+*.pyc
+.DS_Store
