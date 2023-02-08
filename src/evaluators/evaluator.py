@@ -54,7 +54,7 @@ def evaluate_segmentation(model_name,bs,img_size,predict=False):
         predictions = model.predict(test_ds)
         # predictions = np.argmax(predictions,axis=-1)
         # predictions = np.expand_dims(predictions,axis=-1)
-        predictions = (predictions>0.55).astype(np.uint8)
+        predictions = (predictions>0.5).astype(np.uint8)
         
 
         for idx, path in enumerate(test_ds.input_paths):
@@ -68,6 +68,6 @@ def evaluate_segmentation(model_name,bs,img_size,predict=False):
             target_mask_img = load_img(test_ds.target_paths[idx],target_size=img_size)
             pred_mask_img = array_to_img(predictions[idx]).resize(img.size).convert(mode='RGB')
 
-            im = Image.blend(img, pred_mask_img,0.45)
-            im = Image.blend(im, target_mask_img,0.25)
+
+            im = Image.blend(img, pred_mask_img,0.5)
             im.save(pred_fname)

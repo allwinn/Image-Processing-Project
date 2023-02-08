@@ -9,7 +9,7 @@ CONFIG = CONFIG = get_config()
 CONSTANTS = CONFIG["Constants"]
 
 
-def classification_trainer(num_block,epochs=5,bs=32):
+def classification_trainer(model_name,num_block,epochs=5,bs=32):
     
     print(f"{'*'*10} loading dataset for classification task {'*'*10}")
     train_ds, val_ds = load_classification_ds(bs=bs)
@@ -31,7 +31,7 @@ def classification_trainer(num_block,epochs=5,bs=32):
         validation_data=val_ds,
         epochs=epochs,
         verbose=2,
-        callbacks=callback_earlystop(f"models/classification_e{epochs}_bs{bs}.h5")
+        callbacks=callback_earlystop(model_name)
         )
 
     score = results.history
@@ -40,7 +40,7 @@ def classification_trainer(num_block,epochs=5,bs=32):
     print(f"{'*'*10} Validation accuracy {score['val_accuracy'][-1]} and validation loss {score['val_loss'][-1]} {'*'*10}")
 
 
-def segmentation_trainer(epochs=5,bs=32):
+def segmentation_trainer(model_name,epochs=5,bs=32):
     
     print(f"{'*'*10} loading dataset for segmentation task {'*'*10}")
 
@@ -55,17 +55,17 @@ def segmentation_trainer(epochs=5,bs=32):
 
     model.compile(optimizer=tf.keras.optimizers.legacy.Adam(),
                  loss='binary_crossentropy',
-                 metrics=['accuracy'])
+                 metrics=['binary_accuracy'])
 
     results = model.fit(
         train_ds,
         validation_data=val_ds,
         epochs=epochs,
         verbose=2,
-        callbacks=callback_earlystop(f"models/segmentation_e{epochs}_bs{bs}.h5")
+        callbacks=callback_earlystop(model_name)
         )
 
     score = results.history
-    print(f"{'*'*10} Training completed with train accuracy {score['accuracy'][-1]} and train loss {score['loss'][-1]} {'*'*10}")
+    print(f"{'*'*10} Training completed with train accuracy {score['binary_accuracy'][-1]} and train loss {score['loss'][-1]} {'*'*10}")
 
-    print(f"{'*'*10} Validation accuracy {score['val_accuracy'][-1]} and validation loss {score['val_loss'][-1]} {'*'*10}")
+    print(f"{'*'*10} Validation accuracy {score['val_binary_accuracy'][-1]} and validation loss {score['val_loss'][-1]} {'*'*10}")
