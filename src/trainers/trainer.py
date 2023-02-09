@@ -40,7 +40,7 @@ def classification_trainer(model_name,num_block,epochs=5,bs=32):
     print(f"{'*'*10} Validation accuracy {score['val_accuracy'][-1]} and validation loss {score['val_loss'][-1]} {'*'*10}")
 
 
-def segmentation_trainer(model_name,epochs=5,bs=32):
+def segmentation_trainer(model_name,ds_channels,drop_out=0.2,epochs=5,bs=32):
     
     print(f"{'*'*10} loading dataset for segmentation task {'*'*10}")
 
@@ -50,7 +50,7 @@ def segmentation_trainer(model_name,epochs=5,bs=32):
     train_ds, val_ds = load_segmentation_ds(bs=bs,img_size=img_size,test=False)
 
     print(f"{'*'*10} loading the segmentation model {'*'*10}")
-    model = multi_unet_model(num_classes=1, img_size=img_size)
+    model = multi_unet_model(num_classes=1, img_size=img_size,drop_out=drop_out,down_scaling_channels=ds_channels)
     model.summary()
 
     model.compile(optimizer=tf.keras.optimizers.legacy.Adam(),

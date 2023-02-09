@@ -24,15 +24,25 @@ def seg(train=False,evaluate=False):
     e = CONSTANTS["segmentation"]["epoch"]
     w = CONSTANTS["segmentation"]["img_size"]["width"]
     h = CONSTANTS["segmentation"]["img_size"]["height"]
-    model_name = f"models/segmentation_b_acc_e{e}_bs{bs}.h5"
+    ds_channels = CONSTANTS["segmentation"]["down_scaling_channels"]
+    d_out = CONSTANTS["segmentation"]["drop_out"]
+    model_name = f"models/segmentation_max_channel_{ds_channels[-1]}_dout_{d_out}_e{e}_bs{bs}.h5"
     img_size = (h,w)
-
+    
     if train:
-        segmentation_trainer(model_name,e,bs)
+        segmentation_trainer(model_name,ds_channels,d_out,e,bs)
     if evaluate:
         evaluate_segmentation(model_name,bs,img_size,predict=True)
 
 
 if __name__ == "__main__":
     # id_present(train=True,evaluate=True)
-    seg(train=False,evaluate=True)
+    seg(train=True,evaluate=True)
+
+
+## Test accuracy for segmentation task with different level of down scaling.
+
+# ********** Evaluation completed with test accuracy 0.9916638135910034 and test loss 0.022273050621151924 ********** 256
+# ********** Evaluation completed with test accuracy 0.9759243726730347 and test loss 0.0670047253370285 **********  128
+# ********** Evaluation completed with test accuracy 0.9785996079444885 and test loss 0.05778338015079498 ********** 64
+# ********** Evaluation completed with test accuracy 0.9707129597663879 and test loss 0.07916072010993958 ********** 32
