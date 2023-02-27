@@ -1,6 +1,8 @@
-data 
-models #dont upload models on git
-*.h5
+#dont upload the prediction file. Use gdrive if needed.
+#dont upload models on git. Use gdrive if needed.
+data
+models
+predictions
 logs
 src/__pycache__
 *.pyc

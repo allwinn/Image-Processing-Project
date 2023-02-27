@@ -9,12 +9,18 @@ CONSTANTS = CONFIG["Constants"]
 def classifier(train=False,evaluate=False):
     bs = CONSTANTS["classification"]["batch_size"]
     e = CONSTANTS["classification"]["epoch"]
-    model_name = f"models/classification_e{e}_bs{bs}.h5"
+    data_augmentation = CONSTANTS["classification"]["data_aug"]
+    if data_augmentation:
+        print("Data augmentation enabled")
+        model_name = f"models/classification_data_aug_e{e}_bs{bs}.h5"
+    else:
+        model_name = f"models/classification_e{e}_bs{bs}.h5"
+
     
     
     if train:
         num_block = CONSTANTS["classification"]["num_block"]
-        classification_trainer(model_name,num_block,e,bs)
+        classification_trainer(model_name,num_block,e,bs,data_augmentation)
     if evaluate:
         evaluate_classifier(model_name,bs,predict=True)
 
@@ -37,7 +43,8 @@ def segmentation(train=False,evaluate=False):
 
 if __name__ == "__main__":
     # id_present(train=True,evaluate=True)
-    segmentation(train=False,evaluate=True)
+    # segmentation(train=False,evaluate=True)
+    classifier(train=True,evaluate=True)
 
 
 ## Test accuracy for segmentation task with different level of down scaling.

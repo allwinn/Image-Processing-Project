@@ -9,7 +9,7 @@ CONFIG = CONFIG = get_config()
 CONSTANTS = CONFIG["Constants"]
 
 
-def classification_trainer(model_name,num_block,epochs=5,bs=32):
+def classification_trainer(model_name,num_block,epochs=5,bs=32,data_augmentation=False):
     
     print(f"{'*'*10} loading dataset for classification task {'*'*10}")
     train_ds, val_ds = load_classification_ds(bs=bs)
@@ -18,13 +18,13 @@ def classification_trainer(model_name,num_block,epochs=5,bs=32):
     h = CONSTANTS["classification"]["img_size"]["height"]
 
     print(f"{'*'*10} loading the standard_conv2d model {'*'*10}")
-    model = standard_conv2d(h,w,num_block=num_block)
+    model = standard_conv2d(h,w,data_augmentation,num_block=num_block,num_classes=1)
     model.summary()
 
     model.compile(
         optimizer=tf.keras.optimizers.legacy.Adam(),
-        loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-        metrics=['accuracy'])
+        loss="binary_crossentropy",
+        metrics=['binary_accuracy'])
 
     results = model.fit(
         train_ds,
@@ -35,9 +35,9 @@ def classification_trainer(model_name,num_block,epochs=5,bs=32):
         )
 
     score = results.history
-    print(f"{'*'*10} Training completed with train accuracy {score['accuracy'][-1]} and train loss {score['loss'][-1]} {'*'*10}")
+    print(f"{'*'*10} Training completed with train accuracy {score['binary_accuracy'][-1]} and train loss {score['loss'][-1]} {'*'*10}")
 
-    print(f"{'*'*10} Validation accuracy {score['val_accuracy'][-1]} and validation loss {score['val_loss'][-1]} {'*'*10}")
+    print(f"{'*'*10} Validation accuracy {score['val_binary_accuracy'][-1]} and validation loss {score['val_loss'][-1]} {'*'*10}")
 
 
 def segmentation_trainer(model_name,ds_channels,drop_out=0.2,epochs=5,bs=32):

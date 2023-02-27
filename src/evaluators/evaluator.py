@@ -28,8 +28,10 @@ def evaluate_classifier(model_name,bs,predict=False):
 
     if predict:
         predictions = model.predict(test_ds)
-        predictions = np.argmax(predictions,axis=1)
-        pred_fn = os.path.join(PATHS["root"],"classification",f"model_name_{PATHS['classification_fn']}")
+        predictions = (predictions>0.5).astype(np.uint8)
+        # predictions = np.argmax(predictions,axis=1)
+        Path(os.path.join(PATHS["root"],"classification")).mkdir(parents=True,exist_ok=True)
+        pred_fn = os.path.join(PATHS["root"],"classification",f"{model_name.split('/')[-1]}_{PATHS['classification_fn']}")
         
         fnames = [path.split('/')[-1] for path in test_ds.file_paths]
         labels = [ 0 if name.split('_')[-1].split('.')[0] in ["front","back"] else 1 for name in fnames ]

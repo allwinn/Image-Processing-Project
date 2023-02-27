@@ -1,10 +1,15 @@
 from tensorflow import keras
 from keras.models import Model
-from keras.layers import Input, Resizing,Rescaling, Conv2D, MaxPooling2D, Dense, Flatten, concatenate, Conv2DTranspose
+from keras.layers import Input, RandomBrightness,Resizing,Rescaling, RandomFlip, RandomRotation, Conv2D, MaxPooling2D, Dense, Flatten, concatenate, Conv2DTranspose
 
 from src.trainers.trainer_utils import get_unet_block
+from src.utils import get_config
 
-def standard_conv2d(h,w,kernel_size=3,num_block=1,num_classes=2):
+CONFIG = get_config()
+seed = CONFIG["Constants"]["seed"]
+
+
+def standard_conv2d(h,w,data_augmentation,kernel_size=3,num_block=1,num_classes=2):
     """
     standard convolution architecture
 
@@ -22,9 +27,14 @@ def standard_conv2d(h,w,kernel_size=3,num_block=1,num_classes=2):
 
     x = Resizing(h,w)(inp)
     x = Rescaling(1./255)(x)
+
+    if data_augmentation:
+        # x = RandomBrightness((-0.1,0.1),seed=seed)(x)
+        x = RandomFlip("vertical",seed=seed)(x)
+        x = RandomRotation(0.2,seed=seed)(x)
     
 
-    channels = 64
+    channels = 32
     ks = 5
     for _ in range(num_block):
         x = Conv2D(channels,ks, padding="same",activation="relu")(x)
@@ -34,7 +44,7 @@ def standard_conv2d(h,w,kernel_size=3,num_block=1,num_classes=2):
 
     x = Flatten()(x)
     x = Dense(4096, activation='relu')(x)
-    out = Dense(num_classes, activation='softmax')(x)
+    out = Dense(num_classes, activation='sigmoid')(x)
     return Model(inputs=inp, outputs=out, name="StandardConv2D")
 
 

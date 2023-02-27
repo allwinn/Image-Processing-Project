@@ -22,10 +22,11 @@
     "classification": {
       "batch_size": 64,
       "epoch": 10,
-      "num_block": 4,
+      "num_block": 3,
+      "data_aug":true,
       "img_size": {
-        "width": 128,
-        "height": 128
+        "width": 150,
+        "height": 150
       }
     },
     "segmentation": {
