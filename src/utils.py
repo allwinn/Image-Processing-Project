@@ -29,7 +29,7 @@ def check_and_send_paths(inp_path,target_path):
     return inp_path,target_path
 
 
-def get_segmentation_glob(dir,shuffle=True):
+def get_path_glob(dir,shuffle=True):
 
     input_paths = sorted(glob(os.path.join(dir,"Ids","*.png")))
     target_paths = sorted(glob(os.path.join(dir,"GroundTruth","*.png")))
@@ -51,7 +51,7 @@ def get_segmentation_glob(dir,shuffle=True):
 
 
 
-class SegmentationDataloader(Sequence):
+class Dataloader(Sequence):
     """
     Loading dataset iteratively from directory.
     Avoid memory error by loading one batch at a time.
@@ -89,8 +89,33 @@ class SegmentationDataloader(Sequence):
         return x, y
 
 
-def ds_from_directory(data_dir,bs=32,val_ratio=None,subset=None,shuffle=True):
+def ds_from_dataloader(data_dir,bs,img_size,test):
+    """
+    Loading dataset iteratively from directory
+    reference: https://www.tensorflow.org/api_docs/python/tf/keras/utils/Sequence
+    """
 
+    if not test:
+        input_path, target_path = get_path_glob(data_dir,shuffle=True)
+        split_idx = int(len(input_path)*0.8)
+        
+        train_dataloader = Dataloader(bs,inp_paths=input_path[:split_idx]
+                                                ,target_paths=target_path[:split_idx]
+                                                ,img_size=img_size)
+        
+        validation_dataloader = Dataloader(bs,inp_paths=input_path[split_idx+1:]
+                                                ,target_paths=target_path[split_idx+1:]
+                                                ,img_size=img_size)
+        return train_dataloader, validation_dataloader
+    else:
+        input_path, target_path = get_path_glob(data_dir,shuffle=False)
+        test_dataloader = Dataloader(bs,inp_paths=input_path
+                                                ,target_paths=target_path
+                                                ,img_size=img_size)
+        return test_dataloader, None
+
+
+def ds_from_directory(data_dir,bs=32,val_ratio=None,subset=None,shuffle=True):
     return image_dataset_from_directory(
         data_dir,
         validation_split=val_ratio,

@@ -35,12 +35,10 @@ def standard_conv2d(h,w,data_augmentation,kernel_size=3,num_block=1,num_classes=
     
 
     channels = 32
-    ks = 5
     for _ in range(num_block):
-        x = Conv2D(channels,ks, padding="same",activation="relu")(x)
+        x = Conv2D(channels,kernel_size, padding="same",activation="relu")(x)
         x = MaxPooling2D(pool_size=2,strides=2)(x)
         channels = channels*2
-        ks = kernel_size
 
     x = Flatten()(x)
     x = Dense(4096, activation='relu')(x)
@@ -49,6 +47,13 @@ def standard_conv2d(h,w,data_augmentation,kernel_size=3,num_block=1,num_classes=
 
 
 def multi_unet_model(num_classes, img_size, down_scaling_channels=[16,32,64,128,256], drop_out=0.2):
+    """
+    standard Unet model.
+
+    down_scaling_channels: This parameter define the number of downscaling block and number of channels in each downscaling blocks.
+                            Based on the downscaling block, upscaling is decided.
+    drop_out: Drop out rate to use.
+    """
     #Build the model
     inputs = keras.Input(shape=img_size + (3,))
     c = Rescaling(1./255)(inputs)

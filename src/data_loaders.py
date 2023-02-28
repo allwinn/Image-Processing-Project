@@ -1,4 +1,4 @@
-from src.utils import get_config, get_segmentation_glob, ds_from_directory, SegmentationDataloader
+from src.utils import get_config, ds_from_directory, ds_from_dataloader
 
 import os
 
@@ -43,24 +43,9 @@ def load_segmentation_ds(bs,img_size,test=False):
     Loading dataset iteratively from directory
     reference: https://www.tensorflow.org/api_docs/python/tf/keras/utils/Sequence
     """
-    train_dir=os.path.join(PATHS["root"],PATHS["segmentation"]["train"])
-    test_dir=os.path.join(PATHS["root"],PATHS["segmentation"]["test"])
-
-    if not test:
-        input_path, target_path = get_segmentation_glob(train_dir,shuffle=True)
-        split_idx = int(len(input_path)*0.8)
-        
-        train_dataloader = SegmentationDataloader(bs,inp_paths=input_path[:split_idx]
-                                                ,target_paths=target_path[:split_idx]
-                                                ,img_size=img_size)
-        
-        validation_dataloader = SegmentationDataloader(bs,inp_paths=input_path[split_idx+1:]
-                                                ,target_paths=target_path[split_idx+1:]
-                                                ,img_size=img_size)
-        return train_dataloader, validation_dataloader
+    if test:
+        data_dir = os.path.join(PATHS["root"],PATHS["segmentation"]["test"])
     else:
-        input_path, target_path = get_segmentation_glob(test_dir,shuffle=False)
-        test_dataloader = SegmentationDataloader(bs,inp_paths=input_path
-                                                ,target_paths=target_path
-                                                ,img_size=img_size)
-        return test_dataloader, None
+        data_dir = os.path.join(PATHS["root"],PATHS["segmentation"]["train"])
+
+    return ds_from_dataloader(data_dir,bs,img_size,test)

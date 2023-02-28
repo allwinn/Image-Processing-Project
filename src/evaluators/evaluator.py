@@ -49,8 +49,7 @@ def evaluate_segmentation(model_name,bs,img_size,predict=False):
     test_ds, _ = load_segmentation_ds(bs=bs,img_size=img_size,test=True)
     model = tf.keras.models.load_model(model_name)
     score = model.evaluate(test_ds)
-
-    print(f"{'*'*10} Evaluation completed with test accuracy {score[1]} and test loss {score[0]} {'*'*10}")
+    print(f"{'*'*10} Evaluation completed with test accuracy {score[1]} , iou {score[2]} and test loss {score[0]} {'*'*10}")
 
     if predict:
         predictions = model.predict(test_ds)
@@ -60,7 +59,6 @@ def evaluate_segmentation(model_name,bs,img_size,predict=False):
         
 
         for idx, path in enumerate(test_ds.input_paths):
-            
             pred_path = os.path.join(PATHS["root"],"segmentation",f"{model_name.split('/')[-1]}_pred")
             Path(pred_path).mkdir(parents=True,exist_ok=True)
 
@@ -69,7 +67,6 @@ def evaluate_segmentation(model_name,bs,img_size,predict=False):
             img = load_img(path,target_size=img_size)
             target_mask_img = load_img(test_ds.target_paths[idx],target_size=img_size)
             pred_mask_img = array_to_img(predictions[idx]).resize(img.size).convert(mode='RGB')
-
 
             im = Image.blend(img, pred_mask_img,0.5)
             im.save(pred_fname)

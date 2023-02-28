@@ -55,7 +55,7 @@ def segmentation_trainer(model_name,ds_channels,drop_out=0.2,epochs=5,bs=32):
 
     model.compile(optimizer=tf.keras.optimizers.legacy.Adam(),
                  loss='binary_crossentropy',
-                 metrics=['binary_accuracy'])
+                 metrics=['binary_accuracy',tf.keras.metrics.BinaryIoU(target_class_ids=[1], threshold=0.5)])
 
     results = model.fit(
         train_ds,
@@ -66,6 +66,6 @@ def segmentation_trainer(model_name,ds_channels,drop_out=0.2,epochs=5,bs=32):
         )
 
     score = results.history
-    print(f"{'*'*10} Training completed with train accuracy {score['binary_accuracy'][-1]} and train loss {score['loss'][-1]} {'*'*10}")
+    print(f"{'*'*10} Training completed with train accuracy {score['binary_accuracy'][-1]}, iou {score['binary_io_u'][-1]} and train loss {score['loss'][-1]} {'*'*10}")
 
-    print(f"{'*'*10} Validation accuracy {score['val_binary_accuracy'][-1]} and validation loss {score['val_loss'][-1]} {'*'*10}")
+    print(f"{'*'*10} Validation accuracy {score['val_binary_accuracy'][-1]}, iou {score['binary_io_u'][-1]} and validation loss {score['val_loss'][-1]} {'*'*10}")
