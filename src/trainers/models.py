@@ -1,15 +1,21 @@
 from tensorflow import keras
 from keras.models import Model
-from keras.layers import Input, RandomBrightness,Resizing,Rescaling, RandomFlip, RandomRotation, Conv2D, MaxPooling2D, Dense, Flatten, concatenate, Conv2DTranspose
+from keras.layers import (Input, RandomBrightness,Resizing,Rescaling, RandomFlip, 
+                        RandomRotation, Conv2D, MaxPooling2D, Dense, Flatten,
+                        concatenate, Conv2DTranspose)
 
-from src.trainers.trainer_utils import get_unet_block
+
+from skimage.io import imread
+from skimage.transform import resize
+
+from src.trainers.trainer_utils import *
 from src.utils import get_config
 
 CONFIG = get_config()
 seed = CONFIG["Constants"]["seed"]
 
 
-def standard_conv2d(h,w,data_augmentation,kernel_size=3,num_block=1,num_classes=2):
+def standard_conv2d(img_size,data_augmentation,kernel_size=3,num_block=1,num_classes=2):
     """
     standard convolution architecture
 
@@ -20,12 +26,12 @@ def standard_conv2d(h,w,data_augmentation,kernel_size=3,num_block=1,num_classes=
 
     if kernel_size  not in (3,5):
         print("Kernel size not recommended.")
-    if h % 2 != 0:
+    if img_size[0] % 2 != 0:
         print("input resolution not recommended")
 
     inp = Input(shape=(None,None,3))
 
-    x = Resizing(h,w)(inp)
+    x = Resizing(img_size)(inp)
     x = Rescaling(1./255)(x)
 
     if data_augmentation:
@@ -77,3 +83,16 @@ def multi_unet_model(num_classes, img_size, down_scaling_channels=[16,32,64,128,
      
     outputs = Conv2D(num_classes, (1, 1), activation='sigmoid')(u)
     return Model(inputs=[inputs], outputs=[outputs])
+
+
+def classical_model_deskew_hough(img_size,gray_img,rgb_img):
+    image=resize(gray_img,img_size,mode='constant',preserve_range=True)
+    rgb_img=resize(rgb_img,img_size,mode='constant',preserve_range=True)
+    binary_img = binarizeImage(image)
+    image_edges = findEdges(binary_img)
+    angle = findTiltAngle(image_edges)
+    return rotateImage(rgb_img, angle)
+
+
+def classical_model_deskew_sift(img_size,img_path):
+    pass

@@ -1,4 +1,4 @@
-from keras.utils import load_img, Sequence, image_dataset_from_directory 
+from keras.utils import load_img, Sequence, image_dataset_from_directory, img_to_array 
 import numpy as np
 
 import json
@@ -6,6 +6,10 @@ from glob import glob
 import random
 import os
 import math
+
+
+from skimage.io import imread
+from skimage.transform import resize
 
 
 def get_config():
@@ -18,14 +22,23 @@ CONFIG = get_config()
 CONSTANTS = CONFIG["Constants"]
 
 
+def load_images(input_paths,return_array = True, color_mode="grayscale"):
+    images = []
+    for path in input_paths:
+        images.append(load_img(path,color_mode=color_mode))
+    if return_array:
+        return [img_to_array(img) for img in images]
+    return images
+
+
 def check_and_send_paths(inp_path,target_path):
 
-    assert len(inp_path) == len(target_path), "Segmentation: inp & target path size is not same"
+    assert len(inp_path) == len(target_path), "Error: inp & target path size is not same"
     for i_path,t_path in zip(inp_path,target_path):
         i_path = i_path.split('/')[-1]
-        t_path = f"{t_path.split('/')[-1].split('.')[0][:-4]}.png"
+        t_path = f"{t_path.split('/')[-1].replace('_seg','')}"
         
-        assert i_path == t_path, "Segmentation: inp & target path are not same"
+        assert i_path == t_path, f"Error: inp path {i_path} & target path {t_path} are not same"
     return inp_path,target_path
 
 
@@ -80,12 +93,12 @@ class Dataloader(Sequence):
         y = np.zeros((self.batch_size,) + self.img_size + (1,),dtype=bool)
 
         for index, path in enumerate(input_batch):
-            img = load_img(path,target_size=self.img_size)
-            x[index] = img
+            img = imread(path)[:,:,:3]
+            x[index] = resize(img,self.img_size,mode="constant",preserve_range=True)
         
         for index, path in enumerate(target_batch):
-            img = load_img(path, target_size=self.img_size, color_mode="grayscale")
-            y[index] = np.expand_dims(img,2)
+            img = imread(path,as_gray=True)
+            y[index] = np.expand_dims(resize(img,self.img_size,mode="constant",preserve_range=True),axis=-1)
         return x, y
 
 

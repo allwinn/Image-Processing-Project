@@ -1,4 +1,5 @@
-from src.utils import get_config, ds_from_directory, ds_from_dataloader
+from src.utils import get_config, ds_from_directory, ds_from_dataloader,load_images
+from glob import glob
 
 import os
 
@@ -47,5 +48,26 @@ def load_segmentation_ds(bs,img_size,test=False):
         data_dir = os.path.join(PATHS["root"],PATHS["segmentation"]["test"])
     else:
         data_dir = os.path.join(PATHS["root"],PATHS["segmentation"]["train"])
+
+    return ds_from_dataloader(data_dir,bs,img_size,test)
+
+
+def load_deskewing_ds():
+    data_dir=os.path.join(PATHS["root"],PATHS["deskewing"]["data"])
+    input_paths = glob(os.path.join(data_dir,"*.png"))
+    gray_images = load_images(input_paths,return_array=True,color_mode="grayscale")
+    rgb_images = load_images(input_paths,return_array=True,color_mode="rgb")
+    return gray_images, rgb_images, input_paths
+
+
+def load_cleaning_ds(bs,img_size,test=False):
+    """
+    Loading dataset iteratively from directory
+    reference: https://www.tensorflow.org/api_docs/python/tf/keras/utils/Sequence
+    """
+    if test:
+        data_dir = os.path.join(PATHS["root"],PATHS["cleaning"]["test"])
+    else:
+        data_dir = os.path.join(PATHS["root"],PATHS["cleaning"]["train"])
 
     return ds_from_dataloader(data_dir,bs,img_size,test)
