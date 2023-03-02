@@ -50,7 +50,7 @@ def evaluate_segmentation(model_name,bs,img_size,predict=False):
     print(f"{'*'*10} loading dataset for evaluating segmentation task {'*'*10}")
     test_ds, _ = load_segmentation_ds(bs=bs,img_size=img_size,test=True)
     model = tf.keras.models.load_model(model_name)
-    # score = model.evaluate(test_ds)
+    score = model.evaluate(test_ds)
     # print(f"{'*'*10} Evaluation completed with test accuracy {score[1]} , iou {score[2]} and test loss {score[0]} {'*'*10}")
 
     if predict:

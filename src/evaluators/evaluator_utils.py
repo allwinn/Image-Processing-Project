@@ -5,7 +5,6 @@ import numpy as np
 def crop_with_mask(img_path,mask_path,img_size):
     img = cv2.imread(img_path)   # take any image from task 2
     img = cv2.resize(img,img_size)
-    print(img.shape)
     mask = cv2.imread(mask_path,0) #take corresponding mask
 
     
