@@ -5,6 +5,10 @@ from src.utils import get_config
 import os
 from argparse import ArgumentParser
 
+import pytesseract
+from PIL import Image
+import json
+
 CONFIG = get_config()
 CONSTANTS = CONFIG["Constants"]
 TASK_CHOICES = ["classification","segmentation","deskewing","cleaning","ocr"]
@@ -85,9 +89,19 @@ def cleaning(train,evaluate,model_name,predict,classical_model):
 
 
 def ocr(train,evaluate,model_name,predict,classical_model):
-    pass
-
-
+       
+    images = [Image.open('D:/Allwin_Koblenz/Semester-5/ImageProcessing Lecture/Datasets/5_ocr/Actual_20.png')]
+    output={}
+    for image in images:
+        filename='file1'
+        text = pytesseract.image_to_string(image)
+        output['filename']=text.split()
+    with open("final_output.json", "w") as outfile:
+            json.dump(output, outfile)
+        
+        
+        
+        
 def main(train,evaluate,predict,task,model_name,classical_model):
     default_model_path = os.path.join('models',task)
     if task in ["deskewing","ocr"]:
