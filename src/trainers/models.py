@@ -23,7 +23,7 @@ def standard_conv2d(img_size,data_augmentation,kernel_size=3,num_block=1,num_cla
                 Use this parameter to increase the number of block. 
     
     """
-
+    
     if kernel_size  not in (3,5):
         print("Kernel size not recommended.")
     if img_size[0] % 2 != 0:
@@ -31,7 +31,7 @@ def standard_conv2d(img_size,data_augmentation,kernel_size=3,num_block=1,num_cla
 
     inp = Input(shape=(None,None,3))
 
-    x = Resizing(img_size)(inp)
+    x = Resizing(img_size[0],img_size[1])(inp)
     x = Rescaling(1./255)(x)
 
     if data_augmentation:

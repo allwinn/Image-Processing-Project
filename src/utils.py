@@ -93,14 +93,16 @@ class Dataloader(Sequence):
         x = np.zeros((self.batch_size,) + self.img_size + (3,),dtype="float32")
         y = np.zeros((self.batch_size,) + self.img_size + (1,),dtype=self.target_dtype)
         for index, path in enumerate(input_batch):
-            img = imread(path)[:,:,:3]
-            img = resize(img,self.img_size,mode="constant",preserve_range=True)
+            img = load_img(path,target_size=self.img_size)
+            # img = imread(path)[:,:,:3]
+            # img = resize(img,self.img_size,mode="constant",preserve_range=True)
             x[index] = img
             # imsave(f'test/inputs/{index}.png',img)
 
         for index, path in enumerate(target_batch):
-            img = imread(path,as_gray=True)
-            img = np.expand_dims(resize(img,self.img_size,mode="constant",preserve_range=True),2)
+            # img = imread(path,as_gray=True)
+            # img = np.expand_dims(resize(img,self.img_size,mode="constant",preserve_range=True),2)
+            img = np.expand_dims(load_img(path,target_size=self.img_size,color_mode="grayscale"),2)
             y[index] = img
             # imsave(f'test/targets/{index}.png',img)
         return x, y

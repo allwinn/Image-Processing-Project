@@ -4,6 +4,9 @@ from glob import glob
 import os
 import numpy as np
 
+
+from PIL import Image
+
 CONFIG = get_config()
 CONSTANTS = CONFIG["Constants"]
 PATHS = CONFIG["Paths"]["data_path"]
@@ -61,6 +64,15 @@ def load_deskewing_ds():
     return gray_images, rgb_images, input_paths
 
 
+def load_ocr_ds():
+    data_dir=os.path.join(PATHS["root"],PATHS["ocr"]["data"])
+    input_paths = glob(os.path.join(data_dir,"*.png"))
+    images = []
+    for path in input_paths:
+        images.append(Image.open(path))
+    return images,input_paths
+
+
 def load_cleaning_ds(bs,img_size,test=False):
     """
     Loading dataset iteratively from directory
@@ -71,4 +83,4 @@ def load_cleaning_ds(bs,img_size,test=False):
     else:
         data_dir = os.path.join(PATHS["root"],PATHS["cleaning"]["train"])
 
-    return ds_from_dataloader(data_dir,bs,img_size,test,np.uint8)
+    return ds_from_dataloader(data_dir,bs,img_size,test,bool)
