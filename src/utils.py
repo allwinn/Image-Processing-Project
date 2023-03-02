@@ -1,4 +1,4 @@
-from keras.utils import load_img, Sequence, image_dataset_from_directory, img_to_array 
+from keras.utils import load_img, Sequence, image_dataset_from_directory, img_to_array , array_to_img
 import numpy as np
 
 import json
@@ -8,7 +8,7 @@ import os
 import math
 
 
-from skimage.io import imread
+from skimage.io import imread, imsave
 from skimage.transform import resize
 
 
@@ -71,11 +71,12 @@ class Dataloader(Sequence):
     reference: https://www.tensorflow.org/api_docs/python/tf/keras/utils/Sequence
     """
 
-    def __init__(self, bs, inp_paths, target_paths,img_size):
+    def __init__(self, bs, inp_paths, target_paths,img_size,target_dtype=bool):
         self.batch_size = bs
         self.input_paths = inp_paths
         self.target_paths = target_paths
         self.img_size = img_size
+        self.target_dtype = target_dtype
 
 
     def __len__(self):
@@ -90,19 +91,22 @@ class Dataloader(Sequence):
         target_batch = self.target_paths[i: i+self.batch_size]
 
         x = np.zeros((self.batch_size,) + self.img_size + (3,),dtype="float32")
-        y = np.zeros((self.batch_size,) + self.img_size + (1,),dtype=bool)
-
+        y = np.zeros((self.batch_size,) + self.img_size + (1,),dtype=self.target_dtype)
         for index, path in enumerate(input_batch):
             img = imread(path)[:,:,:3]
-            x[index] = resize(img,self.img_size,mode="constant",preserve_range=True)
-        
+            img = resize(img,self.img_size,mode="constant",preserve_range=True)
+            x[index] = img
+            # imsave(f'test/inputs/{index}.png',img)
+
         for index, path in enumerate(target_batch):
             img = imread(path,as_gray=True)
-            y[index] = np.expand_dims(resize(img,self.img_size,mode="constant",preserve_range=True),axis=-1)
+            img = np.expand_dims(resize(img,self.img_size,mode="constant",preserve_range=True),2)
+            y[index] = img
+            # imsave(f'test/targets/{index}.png',img)
         return x, y
 
 
-def ds_from_dataloader(data_dir,bs,img_size,test):
+def ds_from_dataloader(data_dir,bs,img_size,test,target_dtype):
     """
     Loading dataset iteratively from directory
     reference: https://www.tensorflow.org/api_docs/python/tf/keras/utils/Sequence
@@ -114,17 +118,20 @@ def ds_from_dataloader(data_dir,bs,img_size,test):
         
         train_dataloader = Dataloader(bs,inp_paths=input_path[:split_idx]
                                                 ,target_paths=target_path[:split_idx]
-                                                ,img_size=img_size)
+                                                ,img_size=img_size
+                                                ,target_dtype=target_dtype)
         
         validation_dataloader = Dataloader(bs,inp_paths=input_path[split_idx+1:]
                                                 ,target_paths=target_path[split_idx+1:]
-                                                ,img_size=img_size)
+                                                ,img_size=img_size
+                                                ,target_dtype=target_dtype)
         return train_dataloader, validation_dataloader
     else:
         input_path, target_path = get_path_glob(data_dir,shuffle=False)
         test_dataloader = Dataloader(bs,inp_paths=input_path
                                                 ,target_paths=target_path
-                                                ,img_size=img_size)
+                                                ,img_size=img_size
+                                                ,target_dtype=target_dtype)
         return test_dataloader, None
 
 
@@ -136,5 +143,4 @@ def ds_from_directory(data_dir,bs=32,val_ratio=None,subset=None,shuffle=True):
         seed = CONSTANTS["seed"],
         batch_size = bs,
         shuffle=shuffle
-
     )

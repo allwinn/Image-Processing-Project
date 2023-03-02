@@ -2,6 +2,7 @@ from src.utils import get_config, ds_from_directory, ds_from_dataloader,load_ima
 from glob import glob
 
 import os
+import numpy as np
 
 CONFIG = get_config()
 CONSTANTS = CONFIG["Constants"]
@@ -49,7 +50,7 @@ def load_segmentation_ds(bs,img_size,test=False):
     else:
         data_dir = os.path.join(PATHS["root"],PATHS["segmentation"]["train"])
 
-    return ds_from_dataloader(data_dir,bs,img_size,test)
+    return ds_from_dataloader(data_dir,bs,img_size,test,bool)
 
 
 def load_deskewing_ds():
@@ -70,4 +71,4 @@ def load_cleaning_ds(bs,img_size,test=False):
     else:
         data_dir = os.path.join(PATHS["root"],PATHS["cleaning"]["train"])
 
-    return ds_from_dataloader(data_dir,bs,img_size,test)
+    return ds_from_dataloader(data_dir,bs,img_size,test,np.uint8)

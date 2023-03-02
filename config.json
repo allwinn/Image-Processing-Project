@@ -5,22 +5,31 @@
       "classification": {
         "train": "1_classification/Train",
         "test": "1_classification/Test",
+        "pipeline_input":"end_to_end",
         "labels_train": "1_classification/Train/labels_train.csv",
         "labels_test": "1_classification/Test/labels_test.csv"
       },
       "segmentation": {
         "train": "2_segmentation/Train",
-        "test": "2_segmentation/Test"
+        "test": "2_segmentation/Test",
+        "pipeline_input":"end_to_end",
+        "pipeline_output":"end_to_end/segmentation"
       },
       "deskewing": {
-        "data": "3_deskewing"
+        "data": "3_deskewing",
+        "pipeline_input":"end_to_end/segmentation",
+        "pipeline_output":"end_to_end/deskewing"
       },
       "cleaning": {
         "train": "4_cleaning/Train",
-        "test": "4_cleaning/Test"
+        "test": "4_cleaning/Test",
+        "pipeline_input":"end_to_end/deskewing",
+        "pipeline_output":"end_to_end/cleaned"
       },
       "ocr": {
-        "data" : "5_ocr"
+        "data" : "5_ocr",
+        "pipeline_input":"end_to_end/cleaned",
+        "pipeline_output":"end_to_end/ocr"
       }
     },
     "prediction_path": {
@@ -41,8 +50,8 @@
       }
     },
     "segmentation": {
-      "batch_size": 16,
-      "epoch": 12,
+      "batch_size": 8,
+      "epoch": 20,
       "lr": 0.0001,
       "down_scaling_channels": [
         16,
@@ -57,7 +66,7 @@
       "batch_size": 8,
       "epoch": 40,
       "lr": 0.0001,
-      "focal_gamma":1,
+      "focal_gamma":2,
       "class_1_weight": 0.25,
       "down_scaling_channels": [
         16,

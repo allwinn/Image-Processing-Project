@@ -5,10 +5,12 @@ import numpy as np
 from sklearn.metrics import classification_report
 from keras.utils import load_img, array_to_img
 from PIL import Image, ImageDraw, ImageFilter
+import cv2
 
 from src.data_loaders import load_classification_ds, load_segmentation_ds, load_deskewing_ds, load_cleaning_ds
 from src.utils import get_config
 from src.trainers.models import classical_model_deskew_hough
+from src.evaluators.evaluator_utils import crop_with_mask
 
 import os
 from pathlib import Path
@@ -48,39 +50,39 @@ def evaluate_segmentation(model_name,bs,img_size,predict=False):
     print(f"{'*'*10} loading dataset for evaluating segmentation task {'*'*10}")
     test_ds, _ = load_segmentation_ds(bs=bs,img_size=img_size,test=True)
     model = tf.keras.models.load_model(model_name)
-    score = model.evaluate(test_ds)
+    # score = model.evaluate(test_ds)
     # print(f"{'*'*10} Evaluation completed with test accuracy {score[1]} , iou {score[2]} and test loss {score[0]} {'*'*10}")
 
     if predict:
         predictions = model.predict(test_ds)
         # predictions = np.argmax(predictions,axis=-1)
         # predictions = np.expand_dims(predictions,axis=-1)
-        predictions = (predictions<=0.5).astype(np.uint8)
+        predictions = (predictions>0.5).astype(np.uint8)
         
 
         for idx, path in enumerate(test_ds.input_paths):
             #path where predicted img will be save
             pred_path = os.path.join(PATHS["root"],"segmentation",f"{model_name.split('/')[-1][:-3]}_pred")
-            #path where blended img will be save
-            blend_path = os.path.join(pred_path,"blended")
+            #path where croped img will be save
+            croped_path = os.path.join(pred_path,"croped")
             #creating path if not exist
             Path(pred_path).mkdir(parents=True,exist_ok=True)
-            Path(blend_path).mkdir(parents=True,exist_ok=True)
+            Path(croped_path).mkdir(parents=True,exist_ok=True)
             # extracting file name of the input img. Output img name will be based on input img.
             fname = path.split('/')[-1].split('.')[0]
             # complete path and name of the predicted img
             pred_fname = os.path.join(pred_path,f"{fname}_seg.png")
-            blend_fname = os.path.join(blend_path,f"{fname}_blend.png")
+            crop_fname = os.path.join(croped_path,f"{fname}_crop.png")
             
             # load input image
-            img = load_img(path,target_size=img_size)
-            pred_mask_img = array_to_img(predictions[idx]).resize(img.size).convert(mode='RGB')
+            # img = load_img(path,target_size=img_size)
+            pred_mask_img = array_to_img(predictions[idx])#.resize(img.size).convert(mode='RGB')
 
             #save the predicted mask image
             pred_mask_img.save(pred_fname)
-            #Blend input image and mask
-            im = Image.blend(img, pred_mask_img,0.5)
-            im.save(blend_fname)
+            #crop input image and mask
+            croped_img = crop_with_mask(path,pred_fname)
+            cv2.imwrite(crop_fname, croped_img)
 
 
 def predict_deskewing(img_size,classical_model):
@@ -103,12 +105,6 @@ def predict_deskewing(img_size,classical_model):
     print(f"{'*'*10} Deskewing completed. Please the data here {pred_path} {'*'*10}")
 
 
-from skimage.io import imread, imsave
-from skimage.transform import resize
-import skimage
-
-
-
 def evaluate_cleaner(model_name,bs,img_size,predict=False):
     
     print(f"{'*'*10} loading dataset for evaluating cleaning task {'*'*10}")
@@ -123,35 +119,18 @@ def evaluate_cleaner(model_name,bs,img_size,predict=False):
         # predictions = np.expand_dims(predictions,axis=-1)
         predictions = (predictions>0.5).astype(np.uint8)
 
-        
 
         for idx, path in enumerate(zip(test_ds.input_paths,test_ds.target_paths)):
             #path where predicted img will be save
             pred_path = os.path.join(PATHS["root"],"cleaning",f"{model_name.split('/')[-1][:-3]}_pred")
-            data_path = os.path.join(pred_path,"data","inputs")
-            data_path1 = os.path.join(pred_path,"data","targets")
             #creating path if not exist
             Path(pred_path).mkdir(parents=True,exist_ok=True)
-            #creating path if not exist
-
-            Path(data_path1).mkdir(parents=True,exist_ok=True)
-            Path(data_path).mkdir(parents=True,exist_ok=True)
 
             # extracting file name of the input img. Output img name will be based on input img.
             fname = path[0].split('/')[-1].split('.')[0]
             # complete path and name of the predicted img
             pred_fname = os.path.join(pred_path,f"{fname}.png")
             pred_img = array_to_img(predictions[idx])
-
-            inp_img = imread(path[0])
-            inp_img = resize(inp_img,img_size,mode="constant",preserve_range=True)
-            
-            targ_img = imread(path[1],as_gray=True)
-            targ_img = np.expand_dims(resize(targ_img,img_size,mode="constant",preserve_range=True),axis=-1)
-            
-            
-            imsave(os.path.join(data_path,path[0].split('/')[-1]),inp_img.astype(np.uint8))
-            imsave(os.path.join(data_path1,path[1].split('/')[-1]),targ_img)
 
             #save the predicted  image
             pred_img.save(pred_fname)
