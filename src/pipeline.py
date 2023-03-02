@@ -18,6 +18,10 @@ from src.trainers.models import classical_model_deskew_hough
 from src.evaluators.evaluator_utils import crop_with_mask
 import cv2
 
+from PIL import Image
+import pytesseract
+
+import json
 
 CONFIG = get_config()
 CONSTANTS = CONFIG["Constants"]
@@ -26,9 +30,9 @@ TASK_CHOICES = ["classification","segmentation","deskewing","cleaning","ocr"]
 CLASSICAL_MODEL_CHOICES = ["houg_transform","sift"]
 
 
-DEFAULT_MODELS = {"classification":"",
-                  "segmentation":"",
-                  "cleaning":""}
+DEFAULT_MODELS = {"classification":"e10_bs64.h5",
+                  "segmentation":"iou_max_channel_256_dout_0.2_e20_bs8_sz256_lr0.001.h5",
+                  "cleaning":"iou_max_channel_gamma2_cw0.25_256_dout_0.2_e40_bs8_sz256_lr0.0001.h5"}
 DEFAULT_BS = 10
 
 
@@ -38,7 +42,7 @@ def classifier(model_name=None):
     pipeline_dir=os.path.join(PATHS["root"],PATHS["classification"]["pipeline_input"])
     paths = glob(os.path.join(pipeline_dir,"*.png"))
     data = load_images(paths,return_array=True,color_mode="rgb")
-    model = tf.keras.models.load_model(model_name)
+    model = tf.keras.models.load_model(os.path.join('models',"classification",model_name))
     predictions = model.predict(data)
     predictions = (predictions<=0.5).astype(np.uint8)
     return paths,predictions
@@ -50,11 +54,14 @@ def segmentation(input_paths,model_name):
     img_size = (h,w)
     inputs = np.zeros((len(input_paths),h,w,3),dtype=np.uint8)
 
+    if model_name is None:
+        model_name = DEFAULT_MODELS["segmentation"]
+
     for index,path in enumerate(input_paths):
         img = imread(path)[:,:,3]
         img = [resize(img,(img_size),mode='constant',preserve_range=True)]
         inputs[index] = img
-    model = tf.keras.models.load_model(model_name)
+    model = tf.keras.models.load_model(os.path.join('models',"segmentation",model_name))
     predictions = model.predict(inputs)
     predictions = (predictions>0.5).astype(np.uint8)
 
@@ -78,7 +85,7 @@ def segmentation(input_paths,model_name):
         cv2.imwrite(crop_fname, croped_img)
 
 
-def deskew(classical_model="houg_transform"):
+def deskewing(classical_model="houg_transform"):
     w = CONSTANTS["img_size"]["width"]
     h = CONSTANTS["img_size"]["height"]
     img_size = (h,w,3)
@@ -103,13 +110,53 @@ def cleaning(model_name):
     w = CONSTANTS["img_size"]["width"]
     h = CONSTANTS["img_size"]["height"]
     img_size = (h,w)
+    
     if model_name is None:
-        model_name = DEFAULT_MODELS["classification"]
-    evaluate_cleaner(model_name,DEFAULT_BS,img_size,True)
+        model_name = DEFAULT_MODELS["cleaning"]
+
+    cleaning_dir=os.path.join(PATHS["root"],PATHS["cleaning"]["pipeline_output"])
+    Path(cleaning_dir).mkdir(parents=True,exist_ok=True)
+    data_dir=os.path.join(PATHS["root"],PATHS["cleaning"]["pipeline_input"])
+    input_paths = glob(os.path.join(data_dir,"*.png"))
+    img = load_images(input_paths,return_array=True,color_mode="rgb")
+    model = tf.keras.models.load_model(os.path.join('models',"cleaning",model_name))
+    predictions = model.predict(img)
+    predictions = (predictions>0.5).astype(np.uint8)
+
+    #creating path if not exist
+    Path(cleaning_dir).mkdir(parents=True,exist_ok=True)
+
+    for idx, path in enumerate(input_paths):
+
+            # extracting file name of the input img. Output img name will be based on input img.
+            fname = path[0].split('/')[-1].split('.')[0]
+            # complete path and name of the predicted img
+            pred_fname = os.path.join(cleaning_dir,f"{fname}.png")
+            pred_img = array_to_img(predictions[idx])
+            #save the predicted  image
+            pred_img.save(pred_fname)
 
 
-def ocr(train,evaluate,model_name,predict,classical_model):
-    pass
+def ocr(model_name):
+    output={}
+    w = CONSTANTS["img_size"]["width"]
+    h = CONSTANTS["img_size"]["height"]
+    img_size = (h,w,3)
+    print(img_size)
+    
+    ocr_dir=os.path.join(PATHS["root"],PATHS["ocr"]["pipeline_output"],"final_output.json")
+    data_dir=os.path.join(PATHS["root"],PATHS["ocr"]["pipeline_input"])
+    input_paths = glob(os.path.join(data_dir,"*.png"))
+    images = []
+    for path in input_paths:
+        images.append(Image.open(path))
+
+    for image,path in zip(images,input_paths):
+        fname = path.split('/')[-1].split('.')[0]
+        text = pytesseract.image_to_string(image)
+        output[fname]=text.split()
+    with open(ocr_dir, "w") as outfile:
+            json.dump(output, outfile)
 
 def main():
     paths,cls_pred= classifier()
@@ -122,17 +169,18 @@ def main():
         else:
             print(f"File at {path} is Not Id. Can't process it.")
     
-    segmentation(new_paths)
+    if len(new_paths) > 0:
+        segmentation(new_paths)
+        deskewing()
+        cleaning()
+        ocr()
+    else:
+        print("All images are non ID can't process them. Try again with different Images.")
 
 
-    for 
-
-
-
- 
 if __name__ == "__main__":
     arg_parser = ArgumentParser(description="Pipeline for Document Processing")
-    arg_parser.add_argument("-t", "--task", required=True, choices = TASK_CHOICES, type = str.lower, help="Task name to train/evaluate.")
+    arg_parser.add_argument("-t", "--task", type = str.lower, help="Task name to train/evaluate.")
     _args = arg_parser.parse_args()
     
-    main(_args.train)
+    main()

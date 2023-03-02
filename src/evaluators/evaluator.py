@@ -30,7 +30,7 @@ def evaluate_classifier(model_name,bs,predict=False):
 
     if predict:
         predictions = model.predict(test_ds)
-        predictions = (predictions<=0.5).astype(np.uint8)
+        predictions = (predictions>0.5).astype(np.uint8)
         # predictions = np.argmax(predictions,axis=1)
         Path(os.path.join(PATHS["root"],"classification")).mkdir(parents=True,exist_ok=True)
         pred_fn = os.path.join(PATHS["root"],"classification",f"{model_name.split('/')[-1]}_{PATHS['classification_fn']}")
@@ -81,7 +81,7 @@ def evaluate_segmentation(model_name,bs,img_size,predict=False):
             #save the predicted mask image
             pred_mask_img.save(pred_fname)
             #crop input image and mask
-            croped_img = crop_with_mask(path,pred_fname)
+            croped_img = crop_with_mask(path,pred_fname,img_size)
             cv2.imwrite(crop_fname, croped_img)
 
 

@@ -1,6 +1,7 @@
 from src.trainers.trainer import classification_trainer, segmentation_trainer, cleaner_trainer
 from src.evaluators.evaluator import evaluate_classifier, evaluate_segmentation, predict_deskewing, evaluate_cleaner
 from src.utils import get_config
+from src.data_loaders import load_ocr_ds
 
 import os
 from argparse import ArgumentParser
@@ -8,6 +9,7 @@ from argparse import ArgumentParser
 import pytesseract
 from PIL import Image
 import json
+from pathlib import Path
 
 CONFIG = get_config()
 CONSTANTS = CONFIG["Constants"]
@@ -88,18 +90,24 @@ def cleaning(train,evaluate,model_name,predict,classical_model):
         evaluate_cleaner(model_name,bs,img_size,predict)
 
 
-def ocr(train,evaluate,model_name,predict,classical_model):
-       
-    images = [Image.open('D:/Allwin_Koblenz/Semester-5/ImageProcessing Lecture/Datasets/5_ocr/Actual_20.png')]
+def ocr(train,evaluate,_,predict):
     output={}
-    for image in images:
-        filename='file1'
-        text = pytesseract.image_to_string(image)
-        output['filename']=text.split()
-    with open("final_output.json", "w") as outfile:
+    w = CONSTANTS["img_size"]["width"]
+    h = CONSTANTS["img_size"]["height"]
+    if train:
+        print("OCR Task doesn't support training & evaluation. Its only possible to get prediction. remove --train flag")
+    elif evaluate and not predict:
+        print("OCR Task doesn't support evaluation. Getting prediction. use --predict flag")
+    else:
+        images,input_paths = load_ocr_ds()
+        for image,path in zip(images,input_paths):
+            fname = path.split('/')[-1].split('.')[0]
+            text = pytesseract.image_to_string(image)
+            output[fname]=text.split()
+
+    Path("data/5_ocr/").mkdir(parents=True,exist_ok=True)
+    with open("data/5_ocr/final_output.json", "w") as outfile:
             json.dump(output, outfile)
-        
-        
         
         
 def main(train,evaluate,predict,task,model_name,classical_model):
