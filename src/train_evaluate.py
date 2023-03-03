@@ -90,7 +90,7 @@ def cleaning(train,evaluate,model_name,predict,classical_model):
         evaluate_cleaner(model_name,bs,img_size,predict)
 
 
-def ocr(train,evaluate,_,predict):
+def ocr(train,evaluate,_,predict,classical_model):
     output={}
     w = CONSTANTS["img_size"]["width"]
     h = CONSTANTS["img_size"]["height"]
@@ -113,7 +113,7 @@ def ocr(train,evaluate,_,predict):
 def main(train,evaluate,predict,task,model_name,classical_model):
     default_model_path = os.path.join('models',task)
     if task in ["deskewing","ocr"]:
-        TASK_FUNC[task](train,evaluate,default_model_path,predict)
+        TASK_FUNC[task](train,evaluate,default_model_path,predict,classical_model)
         return
     if not train and evaluate:
         assert model_name, "Please provide model name for evaluation or train a model first."
